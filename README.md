@@ -51,14 +51,12 @@ ElectricEye comes with several add-on modules to extend the core model which pro
 Personas who can make use of this tool are DevOps/DevSecOps engineers, SecOps analysts, Cloud Center-of-Excellence personnel, Site Relability Engineers (SREs), Internal Audit and/or Compliance Analysts.
 
 ## Solution Architecture
-![Architecture](https://github.com/jonrau1/ElectricEye/blob/master/screenshots/ElectricEye-Architecture.jpg)
-1. A [time-based CloudWatch Event](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html) starts up an ElectricEye task every 12 hours (or whatever time period you set)
-2. The ElectricEye Task will pull the Docker image from [Elastic Container Registry (ECR)](https://aws.amazon.com/ecr/) via a VPC Interface Endpoint (**Note**: The endpoint `com.amazonaws.region.ecr.dkr` also needs the S3 Gateway Endpoint under the covers as Docker image layers are stored in S3, it serves a dual purpose to download the auditor scripts as well)
-3. Systems Manager Parameter Store parameters are provided to the ElectricEye Task, these store values such as the S3 bucket containing the Auditor scripts and your Shodan.io API key (if used). These allow you to not have to hardcode these values in the environment variables of ECS or in the codebase
-4. The ElectricEye task will download all Auditor scripts from S3 via the VPC endpoint  
-5. ElectricEye executes the scripts to scan your AWS infrastructure for both compliant and non-compliant configurations
-6. **(If Configured)** ElectricEye will query the Shodan Host API with IP addresses retrieved from certain public facing services (EC2 Instances, AmazonMQ brokers, ELB/ELBv2 load balancers, etc.)
-7. All findings are sent to Security Hub using the [BatchImportFindings API](https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_BatchImportFindings.html), findings about compliant resources are automatically [archived](https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-concepts.html).
+![Architecture](https://github.com/jonrau1/ElectricEye/blob/v2-stage/screenshots/ElectricEye-Architecture.jpg)
+1. A [time-based CloudWatch Event](https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html) runs ElectricEye every 12 hours (default value)
+2. The ElectricEye Task will pull the Docker image from [Elastic Container Registry (ECR)](https://aws.amazon.com/ecr/).
+3. Systems Manager Parameter Store passes the bucket name from which Auditors are downloaded. Optionally, ElectricEye will retrieve you API key(s) for [DisruptOps](https://disruptops.com/features/) and [Shodan](https://www.shodan.io/explore), if those integrations are configured.
+4. The ElectricEye task will execute all Auditors to scan your AWS infrastructure and deliver both passed and failed findings to Security Hub. **Note:** ElectricEye will query the Shodan APIs to see if there is a match against select internet-facing AWS resources if configured.
+5. If configured, ElectricEye will send findings to DisruptOps. DisruptOps is also [integrated with Security Hub](https://disruptops.com/aws-security-management-with-securityhub/) and can optionally enforce guardrails and orchestrate security automation from within the platform.
 
 Refer to the [Supported Services and Checks](https://github.com/jonrau1/ElectricEye#supported-services-and-checks) section for an up-to-date list of supported services and checks performed by the Auditors.
 
